@@ -1,33 +1,37 @@
 # Stage 1: Build
 FROM node:20-alpine AS builder
 
-WORKDIR /usr/src/app
+WORKDIR /app
 
-# Copy configuration files
+# Copy package files first to leverage Docker caching
 COPY package*.json ./
+COPY prisma ./prisma/
 
-# Install dependencies
+# Install all dependencies
 RUN npm install
 
-# Copy the rest of the application code
+# Copy the rest of your source code
 COPY . .
 
-# Build the NestJS application
+# Generate Prisma Client (This fixes your $connect errors!)
+RUN npx prisma generate
+
+# Build the NestJS app
 RUN npm run build
 
 # Stage 2: Production
 FROM node:20-alpine
 
-WORKDIR /usr/src/app
+WORKDIR /app
 
-# Copy only the production dependencies and built files
-COPY package*.json ./
-RUN npm install --only=production
+# Copy only the necessary files from the builder stage
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/prisma ./prisma
 
-COPY --from=builder /usr/src/app/dist ./dist
-
-# Expose the port defined in main.ts
+# Expose the port your app runs on
 EXPOSE 3000
 
-# Command to run the application
+# Start the application
 CMD ["node", "dist/main"]
