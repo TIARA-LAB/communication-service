@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { InjectRedis } from '@songkeys/nestjs-redis';
+import { InjectRedis } from '@nestjs-modules/ioredis'
 import { Redis } from 'ioredis';
 
 @Injectable()
@@ -11,12 +11,29 @@ export class MessageService {
   ) {}
 
   // --- Core Messaging ---
-  async createMessage(senderId: number, data: any) {
-    return this.prisma.message.create({
-      data: { ...data, senderId },
-      include: { sender: { select: { phone: true } } }
-    });
-  }
+
+async createMessage(senderId: number, data: any) {
+  return this.prisma.message.create({
+    data: {
+      content: data.content,
+      // Convert to Number to satisfy Prisma
+      receiverId: data.receiverId ? Number(data.receiverId) : null,
+      groupId: data.groupId ? Number(data.groupId) : null,
+      type: data.type ? data.type.toUpperCase() : 'TEXT', // Match your Enum case
+      fileUrl: data.fileUrl || null,
+      senderId: senderId, // This is already a number from JwtStrategy
+    },
+    include: {
+      sender: {
+        select: {
+          phone: true,
+          name: true,
+          avatar: true,
+        },
+      },
+    },
+  });
+}
 
   // --- Inbox Logic (The WhatsApp Home Screen) ---
   async getInbox(userId: number) {

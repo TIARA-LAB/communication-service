@@ -8,7 +8,7 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
 }
 
 enum MessageType {
@@ -28,6 +28,7 @@ enum MessageStatus {
 model User {
   id               Int            @id @default(autoincrement())
   phone            String         @unique
+  email            String         @unique
   lastSeen         DateTime       @default(now())
   sentMessages     Message[]      @relation("SentMessages")
   receivedMessages Message[]      @relation("ReceivedMessages")

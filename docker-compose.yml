@@ -3,7 +3,7 @@ services:
     build: .
     container_name: nexus_api
     ports:
-      - "3000:3000"
+      - '3000:3000'
     env_file: .env
     depends_on:
       db:
@@ -14,21 +14,21 @@ services:
       - nexus_net
 
   db:
-    image: mysql:8.0
+    image: postgres:13
     container_name: nexus_db
     restart: always
     environment:
-      # Use the variables from .env to keep it in sync
-      MYSQL_ROOT_PASSWORD: communication
-      MYSQL_DATABASE: communication_db
+      POSTGRES_DB: communication_db
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: communication
     ports:
-      - "3306:3306"
+      - '5432:5432'
     volumes:
-      - mysql_data:/var/lib/mysql
+      - postgres_data:/var/lib/postgresql/data
     networks:
       - nexus_net
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      test: ['CMD-SHELL', 'pg_isready -U root -d communication_db']
       interval: 10s
       timeout: 5s
       retries: 5
@@ -37,7 +37,7 @@ services:
     image: redis:alpine
     container_name: nexus_redis
     ports:
-      - "6379:6379"
+      - '6379:6379'
     networks:
       - nexus_net
 
@@ -46,4 +46,4 @@ networks:
     driver: bridge
 
 volumes:
-  mysql_data:
+  postgres_data:

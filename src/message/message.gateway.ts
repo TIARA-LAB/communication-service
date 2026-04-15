@@ -1,7 +1,7 @@
 import { WebSocketGateway, WebSocketServer, SubscribeMessage, OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Redis } from 'ioredis';
-import { InjectRedis } from '@songkeys/nestjs-redis';
+import { InjectRedis } from '@nestjs-modules/ioredis'
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class MessageGateway implements OnGatewayConnection, OnGatewayDisconnect {
