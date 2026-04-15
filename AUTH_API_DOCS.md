@@ -1,8 +1,8 @@
 # Authentication API Documentation
 
-## WhatsApp-Style OTP Authentication Flow
+## Email-Based OTP Authentication with Refresh Tokens
 
-This implementation provides a complete phone-number-based authentication system similar to WhatsApp's authentication method.
+This implementation provides a complete email and phone-number-based authentication system with JWT access and refresh tokens.
 
 ### Endpoints
 
@@ -10,12 +10,13 @@ This implementation provides a complete phone-number-based authentication system
 
 **Endpoint:** `POST /auth/request-otp`
 
-**Description:** Send a 6-digit OTP to the user's phone number via SMS.
+**Description:** Send a 6-digit OTP to the user's email address.
 
 **Request Body:**
 
 ```json
 {
+  "email": "user@example.com",
   "phone": "+2348129316522"
 }
 ```
@@ -25,7 +26,7 @@ This implementation provides a complete phone-number-based authentication system
 ```json
 {
   "success": true,
-  "message": "Verification code sent",
+  "message": "Verification code sent to your email",
   "data": {
     "retry_after": "60s"
   }
@@ -37,7 +38,7 @@ This implementation provides a complete phone-number-based authentication system
 ```json
 {
   "statusCode": 400,
-  "message": "Invalid phone number format",
+  "message": "Invalid email format",
   "error": "Bad Request"
 }
 ```
@@ -50,12 +51,13 @@ This implementation provides a complete phone-number-based authentication system
 
 **Endpoint:** `POST /auth/verify-otp`
 
-**Description:** Verify the OTP and receive a JWT access token. Creates a new user if not exists.
+**Description:** Verify the OTP and receive JWT access and refresh tokens. Creates a new user if not exists.
 
 **Request Body:**
 
 ```json
 {
+  "email": "user@example.com",
   "phone": "+2348129316522",
   "otp": "123456"
 }
@@ -68,9 +70,11 @@ This implementation provides a complete phone-number-based authentication system
   "success": true,
   "message": "Authentication successful",
   "data": {
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
     "user": {
       "id": "uuid-here",
+      "email": "user@example.com",
       "phone": "+2348129316522",
       "name": null,
       "avatar": null
@@ -89,15 +93,53 @@ This implementation provides a complete phone-number-based authentication system
 }
 ```
 
-**Token Expiration:** Access tokens expire in 7 days.
+**Token Expiration:** Access tokens expire in 15 minutes, refresh tokens expire in 30 days.
 
 ---
 
-#### 3. Logout
+#### 3. Refresh Token
+
+**Endpoint:** `POST /auth/refresh-token`
+
+**Description:** Refresh the access token using a valid refresh token.
+
+**Request Body:**
+
+```json
+{
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+**Response (Success - 200):**
+
+```json
+{
+  "success": true,
+  "message": "Token refreshed successfully",
+  "data": {
+    "accessToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+  }
+}
+```
+
+**Response (Error - 401):**
+
+```json
+{
+  "statusCode": 401,
+  "message": "Invalid refresh token",
+  "error": "Unauthorized"
+}
+```
+
+---
+
+#### 4. Logout
 
 **Endpoint:** `POST /auth/logout`
 
-**Description:** Logout the user by blacklisting their JWT token.
+**Description:** Logout the user by blacklisting their JWT token (access or refresh token).
 
 **Request Body:**
 

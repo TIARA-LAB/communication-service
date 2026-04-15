@@ -2,7 +2,9 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { RedisModule } from '@nestjs-modules/ioredis';
 import { PrismaModule } from './prisma/prisma.module';
-import { AuthModule } from './auth/auth.module'; // Only one line!
+import { AuthModule } from './auth/auth.module';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 @Module({
   imports: [
@@ -14,5 +16,7 @@ import { AuthModule } from './auth/auth.module'; // Only one line!
     }),
     AuthModule,
   ],
+  controllers: [AppController],
+  providers: [AppService],
 })
 export class AppModule {}
