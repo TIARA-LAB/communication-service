@@ -49,8 +49,6 @@ export class SmsService {
       status: "success"
     };
     
-    /* Temporary comment out the failing Termii logic 
-    until your Sender ID is approved.
-    */
+    
   }
 }

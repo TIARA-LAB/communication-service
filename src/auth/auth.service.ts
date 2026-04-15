@@ -1,5 +1,5 @@
 import { Injectable, BadRequestException, Logger, InternalServerErrorException } from '@nestjs/common';
-import { InjectRedis } from '@nestjs-modules/ioredis';
+import { InjectRedis } from '@songkeys/nestjs-redis';
 import Redis from 'ioredis';
 import { randomInt } from 'crypto';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';

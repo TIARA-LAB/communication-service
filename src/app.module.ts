@@ -1,18 +1,26 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
-import { RedisModule } from '@nestjs-modules/ioredis';
-import { PrismaModule } from './prisma/prisma.module';
-import { AuthModule } from './auth/auth.module'; // Only one line!
+import { MessageController } from './message/message.controller';
+import { MessageService } from './message/message.service';
+import { MessageGateway } from './message/message.gateway';
+import { PrismaService } from './prisma/prisma.service';
+import { RedisModule } from '@songkeys/nestjs-redis';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
-    PrismaModule,
     RedisModule.forRoot({
-      type: 'single',
-      url: `redis://${process.env.REDIS_HOST || 'localhost'}:6379`,
+      config: {
+        host: process.env.REDIS_HOST || 'db',
+        port: 6379,
+      },
     }),
-    AuthModule,
+  ],
+  controllers: [
+    MessageController, // Add this
+  ],
+  providers: [
+    MessageService,    // Add this
+    MessageGateway,    // Add this
+    PrismaService,     // Ensure your PrismaService is here too
   ],
 })
 export class AppModule {}
