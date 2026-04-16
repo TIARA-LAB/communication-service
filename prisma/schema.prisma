@@ -23,6 +23,7 @@ enum MessageStatus {
   SENT
   DELIVERED
   READ
+  PINNED
 }
 
 model User {
@@ -71,8 +72,12 @@ model Message {
   fileUrl      String?
   type         MessageType   @default(TEXT)
   status       MessageStatus @default(SENT)
-  isEdited     Boolean       @default(false)
   isDeleted    Boolean       @default(false)
+  isEdited      Boolean        @default(false)
+  isForwarded   Boolean        @default(false)
+  parentMessageId Int?         // For replies/forwards
+  parentMessage   Message?     @relation("MessageToMessage", fields: [parentMessageId], references: [id])
+  replies         Message[]    @relation("MessageToMessage")
   
   senderId     Int
   receiverId   Int?
