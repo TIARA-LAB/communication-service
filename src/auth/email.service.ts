@@ -1,44 +1,44 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Resend } from 'resend';
 
 @Injectable()
 export class EmailService {
   private readonly logger = new Logger(EmailService.name);
-  private resend: Resend;
-
-  constructor() {
-    this.resend = new Resend(process.env.RESEND_API_KEY);
-  }
 
   async sendOtp(email: string, otp: string) {
+    const apiKey = process.env.RESEND_API_KEY;
+
+    if (!apiKey) {
+      this.logger.error('RESEND_API_KEY is missing!');
+      throw new Error('Email configuration error');
+    }
+
     try {
-      const { data, error } = await this.resend.emails.send({
-        from: 'Your App <onboarding@resend.dev>', // Replace with your verified domain
-        to: [email],
-        subject: 'Your Verification Code',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2>Verification Code</h2>
-            <p>Your verification code is:</p>
-            <div style="font-size: 24px; font-weight: bold; color: #333; padding: 10px; border: 1px solid #ddd; display: inline-block;">
-              ${otp}
-            </div>
-            <p>This code will expire in 5 minutes.</p>
-            <p>If you didn't request this code, please ignore this email.</p>
-          </div>
-        `,
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          from: 'onboarding@resend.dev',
+          to: email,
+          subject: 'Your Verification Code',
+          html: `<strong>Your code is: ${otp}</strong>`,
+        }),
       });
 
-      if (error) {
-        this.logger.error(`Resend Error: ${error.message}`);
-        throw new Error('Email delivery failed');
+      const result = await response.json();
+
+      if (!response.ok) {
+        // This will tell us EXACTLY why it failed (401, 403, 422, etc.)
+        this.logger.error(`Resend API Refused: ${JSON.stringify(result)}`);
+        throw new Error(result.message || 'API Error');
       }
 
       this.logger.log(`Email sent successfully to ${email}`);
-      return data;
+      return result;
     } catch (error: unknown) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Email delivery failed';
+      const errorMessage = error instanceof Error ? error.message : 'Network failure';
       this.logger.error(`Email Service Error: ${errorMessage}`);
       throw new Error('Email delivery failed');
     }
