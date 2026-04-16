@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { 
+  Injectable, 
+  NotFoundException, 
+  UnauthorizedException, 
+  BadRequestException 
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { InjectRedis } from '@nestjs-modules/ioredis'
 import { Redis } from 'ioredis';
@@ -10,32 +15,22 @@ export class MessageService {
     @InjectRedis() private readonly redis: Redis,
   ) {}
 
-  // --- Core Messaging ---
-
-async createMessage(senderId: number, data: any) {
-  return this.prisma.message.create({
-    data: {
-      content: data.content,
-      // Convert to Number to satisfy Prisma
-      receiverId: data.receiverId ? Number(data.receiverId) : null,
-      groupId: data.groupId ? Number(data.groupId) : null,
-      type: data.type ? data.type.toUpperCase() : 'TEXT', // Match your Enum case
-      fileUrl: data.fileUrl || null,
-      senderId: senderId, // This is already a number from JwtStrategy
-    },
-    include: {
-      sender: {
-        select: {
-          phone: true,
-          name: true,
-          avatar: true,
-        },
+  async createMessage(senderId: number, data: any) {
+    return this.prisma.message.create({
+      data: {
+        content: data.content,
+        receiverId: data.receiverId ? Number(data.receiverId) : null,
+        groupId: data.groupId ? Number(data.groupId) : null,
+        type: data.type ? data.type.toUpperCase() : 'TEXT',
+        fileUrl: data.fileUrl || null,
+        senderId: senderId,
       },
-    },
-  });
-}
+      include: {
+        sender: { select: { phone: true, name: true, avatar: true } },
+      },
+    });
+  }
 
-  // --- Inbox Logic (The WhatsApp Home Screen) ---
   async getInbox(userId: number) {
     const messages = await this.prisma.message.findMany({
       where: { OR: [{ senderId: userId }, { receiverId: userId }] },
@@ -62,7 +57,6 @@ async createMessage(senderId: number, data: any) {
     return Array.from(conversations.values());
   }
 
-  // --- Chat History with Pagination ---
   async getChatHistory(userId: number, partnerId: number, cursor?: number) {
     return this.prisma.message.findMany({
       where: {
@@ -77,7 +71,6 @@ async createMessage(senderId: number, data: any) {
     });
   }
 
-  // --- Mutations ---
   async deleteForEveryone(messageId: number, userId: number) {
     const message = await this.prisma.message.findUnique({ where: { id: messageId } });
     if (!message || message.senderId !== userId) throw new UnauthorizedException();
@@ -87,42 +80,79 @@ async createMessage(senderId: number, data: any) {
       data: { content: 'This message was deleted', isDeleted: true, fileUrl: null },
     });
   }
-  // Add this inside the MessageService class
-async searchMessages(userId: number, query: string, partnerId?: number) {
-  return this.prisma.message.findMany({
-    where: {
-      // Ensure the user is either the sender or receiver
-      OR: [
-        { senderId: userId },
-        { receiverId: userId },
-      ],
-      // If a partnerId is provided, restrict search to that specific chat
-      ...(partnerId && {
-        AND: [
-          {
+
+  async searchMessages(userId: number, query: string, partnerId?: number) {
+    return this.prisma.message.findMany({
+      where: {
+        OR: [{ senderId: userId }, { receiverId: userId }],
+        ...(partnerId && {
+          AND: [{
             OR: [
               { senderId: userId, receiverId: partnerId },
               { senderId: partnerId, receiverId: userId },
             ],
-          },
-        ],
-      }),
-      // The actual search query
-      content: {
-        contains: query,
+          }],
+        }),
+        content: { contains: query, mode: 'insensitive' },
+        isDeleted: false,
       },
-      isDeleted: false, // Don't show revoked messages in search
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
-    include: {
-      sender: {
-        select: {
-          phone: true,
-        },
+      orderBy: { createdAt: 'desc' },
+      include: { sender: { select: { phone: true } } },
+    });
+  }
+
+  async editMessage(userId: number, messageId: number, newContent: string) {
+    const message = await this.prisma.message.findUnique({ where: { id: messageId } });
+    if (!message || message.senderId !== userId) throw new UnauthorizedException('Cannot edit this message');
+    if (message.isDeleted) throw new BadRequestException('Cannot edit a deleted message');
+
+    return this.prisma.message.update({
+      where: { id: messageId },
+      data: { content: newContent, isEdited: true },
+    });
+  }
+
+  async forwardMessage(userId: number, messageId: number, receiverId: number) {
+    const original = await this.prisma.message.findUnique({ where: { id: messageId } });
+    if (!original) throw new NotFoundException('Original message not found');
+
+    return this.prisma.message.create({
+      data: {
+        content: original.content,
+        fileUrl: original.fileUrl,
+        type: original.type,
+        senderId: userId,
+        receiverId: receiverId,
+        isForwarded: true,
       },
-    },
-  });
-}
+    });
+  }
+
+  async toggleStar(userId: number, messageId: number) {
+    const existing = await this.prisma.starredMessage.findUnique({
+      where: { userId_messageId: { userId, messageId } },
+    });
+
+    if (existing) {
+      await this.prisma.starredMessage.delete({ where: { id: existing.id } });
+      return { starred: false };
+    } else {
+      await this.prisma.starredMessage.create({ data: { userId, messageId } });
+      return { starred: true };
+    }
+  }
+
+  async getStarredMessages(userId: number) {
+    return this.prisma.starredMessage.findMany({
+      where: { userId },
+      include: { message: true },
+    });
+  }
+
+  async pinMessage(messageId: number, isPinned: boolean) {
+    return this.prisma.message.update({
+      where: { id: messageId },
+      data: { status: isPinned ? 'PINNED' : 'SENT' },
+    });
+  }
 }
