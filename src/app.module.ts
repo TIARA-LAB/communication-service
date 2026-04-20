@@ -9,6 +9,9 @@ import { AuthModule } from './auth/auth.module';
 import { MessageController } from './message/message.controller';
 import { MessageService } from './message/message.service';
 import { MessageGateway } from './message/message.gateway';
+import { ProfileController } from './profile/profile.controller';
+import { ProfileService } from './profile/profile.service';
+import { ProfileModule } from './profile/profile.module';
 
 @Module({
   imports: [
@@ -32,6 +35,7 @@ import { MessageGateway } from './message/message.gateway';
 
     PrismaModule,
     AuthModule,
+    ProfileModule
   ],
   controllers: [AppController, MessageController],
   providers: [

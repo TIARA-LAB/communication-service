@@ -1,14 +1,10 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+ 
 }
 
 enum MessageType {
@@ -23,21 +19,23 @@ enum MessageStatus {
   SENT
   DELIVERED
   READ
+  PINNED    // <--- Restored
 }
 
 model User {
-  id               Int            @id @default(autoincrement())
-  phone            String         @unique
-  email            String         @unique
-  lastSeen         DateTime       @default(now())
-  sentMessages     Message[]      @relation("SentMessages")
-  receivedMessages Message[]      @relation("ReceivedMessages")
+  id               Int              @id @default(autoincrement())
+  phone            String           @unique
+  email            String           @unique
+  name             String?
+  bio              String?          @default("Available") // <--- New Profile Feature
+  avatar           String?
+  lastSeen         DateTime         @default(now())
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  sentMessages     Message[]        @relation("SentMessages")
+  receivedMessages Message[]        @relation("ReceivedMessages")
   groupMemberships GroupMember[]
   starredMessages  StarredMessage[]
-   name      String?
-  avatar    String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
   @@index([phone])
 }
@@ -53,46 +51,47 @@ model Group {
 }
 
 model GroupMember {
-  id        Int      @id @default(autoincrement())
-  userId    Int
-  groupId   Int
-  isAdmin   Boolean  @default(false)
-  joinedAt  DateTime @default(now())
+  id       Int      @id @default(autoincrement())
+  userId   Int
+  groupId  Int
+  isAdmin  Boolean  @default(false)
+  joinedAt DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id])
-  group     Group    @relation(fields: [groupId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+  group Group @relation(fields: [groupId], references: [id])
 
   @@unique([userId, groupId])
 }
 
 model Message {
-  id           Int           @id @default(autoincrement())
-  content      String?       @db.Text
-  fileUrl      String?
-  type         MessageType   @default(TEXT)
-  status       MessageStatus @default(SENT)
-  isEdited     Boolean       @default(false)
-  isDeleted    Boolean       @default(false)
-  
-  senderId     Int
-  receiverId   Int?
-  groupId      Int?
-  
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id          Int           @id @default(autoincrement())
+  content     String?       @db.Text
+  fileUrl     String?
+  type        MessageType   @default(TEXT)
+  status      MessageStatus @default(SENT)
+  isEdited    Boolean       @default(false)
+  isDeleted   Boolean       @default(false)
+  isForwarded Boolean       @default(false) // <--- Restored
 
-  sender       User          @relation("SentMessages", fields: [senderId], references: [id])
-  receiver     User?         @relation("ReceivedMessages", fields: [receiverId], references: [id])
-  group        Group?        @relation(fields: [groupId], references: [id])
-  stars        StarredMessage[]
+  senderId   Int
+  receiverId Int?
+  groupId    Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sender   User             @relation("SentMessages", fields: [senderId], references: [id])
+  receiver User?            @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  group    Group?           @relation(fields: [groupId], references: [id])
+  stars    StarredMessage[]
 }
 
 model StarredMessage {
-  id        Int      @id @default(autoincrement())
+  id        Int     @id @default(autoincrement())
   userId    Int
   messageId Int
-  user      User     @relation(fields: [userId], references: [id])
-  message   Message  @relation(fields: [messageId], references: [id])
+  user      User    @relation(fields: [userId], references: [id])
+  message   Message @relation(fields: [messageId], references: [id])
 
   @@unique([userId, messageId])
 }
