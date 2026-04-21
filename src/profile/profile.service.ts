@@ -55,4 +55,10 @@ export class ProfileService {
       data: { avatar: fileUrl },
     });
   }
+
+  async findAllUsers() {
+  return this.prisma.user.findMany({
+    select: { id: true, name: true, phone: true }
+  });
+}
 }
