@@ -30,4 +30,5 @@ export class MessageGateway implements OnGatewayConnection, OnGatewayDisconnect 
   handleTyping(client: Socket, data: { to: number; isTyping: boolean }) {
     this.server.to(`user_${data.to}`).emit('display_typing', { from: client.handshake.query.userId, isTyping: data.isTyping });
   }
+
 }

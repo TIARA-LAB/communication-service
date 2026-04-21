@@ -24,7 +24,7 @@ async function bootstrap() {
   // 3. Swagger Documentation Setup
   const config = new DocumentBuilder()
     .setTitle('Profeynex Communication Service')
-    .setDescription('Real-time Messaging API with MySQL, Redis, and WebSocket support')
+    .setDescription('Real-time Messaging API with POSTGRESQL, Redis, and WebSocket support')
     .setVersion('1.0')
     .addBearerAuth({
       type: 'http',
@@ -38,6 +38,11 @@ async function bootstrap() {
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
+
+
+app.useStaticAssets(join(__dirname, '..', 'uploads'), {
+  prefix: '/uploads/',
+});
 
   // 4. Start the Server
   const port = process.env.PORT || 3000;
