@@ -52,7 +52,7 @@ export class ProfileService {
   async updateAvatar(userId: number, fileUrl: string) {
     return this.prisma.user.update({
       where: { id: userId },
-      data: { avatar: fileUrl },
+      data: { avatar: fileUrl }
     });
   }
 

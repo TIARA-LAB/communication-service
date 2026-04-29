@@ -2,8 +2,6 @@ import {
   Controller,
   Post,
   Body,
-  ValidationPipe,
-  Headers,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -26,8 +24,8 @@ export class AuthController {
   @ApiOperation({ summary: 'Request OTP for email and phone number' })
   @ApiResponse({ status: 200, description: 'OTP sent successfully' })
   @ApiResponse({ status: 400, description: 'Invalid email or phone number' })
-  async requestOtp(@Body(new ValidationPipe()) body: RequestOtpDto) {
-    return this.authService.requestOtp(body.email, body.phone);
+  async requestOtp(@Body() body: RequestOtpDto) {
+    return this.authService.requestOtp(body);
   }
 
   @Post('refresh-token')
@@ -37,8 +35,8 @@ export class AuthController {
     description: 'Access token refreshed successfully',
   })
   @ApiResponse({ status: 401, description: 'Invalid refresh token' })
-  async refreshToken(@Body(new ValidationPipe()) body: RefreshTokenDto) {
-    return this.authService.refreshToken(body.refreshToken);
+  async refreshToken(@Body() body: RefreshTokenDto) {
+    return this.authService.refreshToken(body);
   }
 
   @Post('verify-otp')
@@ -48,8 +46,8 @@ export class AuthController {
     description: 'Verified successfully, tokens issued',
   })
   @ApiResponse({ status: 400, description: 'Invalid or expired OTP' })
-  async verifyOtp(@Body(new ValidationPipe()) body: VerifyOtpDto) {
-    return this.authService.verifyOtp(body.email, body.phone, body.otp);
+  async verifyOtp(@Body() body: VerifyOtpDto) {
+    return this.authService.verifyOtp(body);
   }
 
   @Post('logout')
@@ -57,7 +55,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Logout user (blacklist token)' })
   @ApiResponse({ status: 200, description: 'Successfully logged out' })
   @ApiResponse({ status: 401, description: 'Invalid token' })
-  async logout(@Body(new ValidationPipe()) body: LogoutDto) {
-    return this.authService.logout(body.token);
+  async logout(@Body() body: LogoutDto) {
+    return this.authService.logout(body);
   }
 }

@@ -7,6 +7,10 @@ import { randomInt } from 'crypto';
 import { parsePhoneNumberFromString } from 'libphonenumber-js';
 import { EmailService } from './email.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { LogoutDto } from './dto/logout.dto';
+import { VerifyOtpDto } from './dto/verify-otp.dto';
+import { RequestOtpDto } from './dto/request-otp.dto';
 
 @Injectable()
 export class AuthService {
@@ -19,7 +23,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async requestOtp(email: string, phone: string) {
+  async requestOtp({ email, phone }: RequestOtpDto) {
     // 1. Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
@@ -66,7 +70,7 @@ export class AuthService {
     }
   }
 
-  async verifyOtp(email: string, phone: string, otp: string) {
+  async verifyOtp({ email, phone, otp }: VerifyOtpDto) {
     // 1. Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
@@ -163,7 +167,7 @@ export class AuthService {
     }
   }
 
-  async refreshToken(refreshToken: string) {
+  async refreshToken({ refreshToken }: RefreshTokenDto) {
     try {
       // 1. Verify the refresh token
       const decoded = this.jwtService.verify(refreshToken);
@@ -212,7 +216,7 @@ export class AuthService {
     }
   }
 
-  async logout(token: string) {
+  async logout({ token }: LogoutDto) {
     try {
       // 1. Verify and decode the token to get expiration time
       const decoded = this.jwtService.verify(token);
