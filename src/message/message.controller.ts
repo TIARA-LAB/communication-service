@@ -1,14 +1,28 @@
-import { 
-  Controller, Post, Get, Body, UseGuards, Req, 
-  UseInterceptors, UploadedFile, Query, Param, 
-  Delete, Patch 
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  UseGuards,
+  Req,
+  UseInterceptors,
+  UploadedFile,
+  Query,
+  Param,
+  Delete,
+  Patch,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { 
-  ApiTags, ApiOperation, ApiBearerAuth, 
-  ApiConsumes, ApiBody, ApiQuery 
+import {
+  ApiTags,
+  ApiOperation,
+  ApiBearerAuth,
+  ApiConsumes,
+  ApiBody,
+  ApiQuery,
+  ApiResponse,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { MessageService } from './message.service';
 import { SendMessageDto } from './dto/message.dto';
 import { diskStorage } from 'multer';
@@ -23,74 +37,137 @@ export class MessageController {
 
   @Post('send')
   @ApiOperation({ summary: 'Send a new message with optional file upload' })
+  @ApiResponse({ status: 201, description: 'Message sent successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid message payload' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: SendMessageDto })
-  @UseInterceptors(FileInterceptor('file', {
-    storage: diskStorage({
-      destination: './uploads',
-      filename: (req, file, cb) => {
-        const name = Date.now() + extname(file.originalname);
-        cb(null, name);
-      },
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (req, file, cb) => {
+          const name = Date.now() + extname(file.originalname);
+          cb(null, name);
+        },
+      }),
     }),
-  }))
-  async sendMessage(@Req() req, @UploadedFile() file, @Body() body: SendMessageDto) {
+  )
+  async sendMessage(
+    @Req() req,
+    @UploadedFile() file,
+    @Body() body: SendMessageDto,
+  ) {
     const fileUrl = file ? file.path : null;
-    return this.messageService.createMessage(req.user.userId, { ...body, fileUrl });
+    return this.messageService.createMessage(req.user.userId, {
+      ...body,
+      fileUrl,
+    });
   }
 
   @Get('inbox')
   @ApiOperation({ summary: 'Get the latest conversations' })
+  @ApiResponse({ status: 200, description: 'Inbox returned successfully' })
   async getInbox(@Req() req) {
     return this.messageService.getInbox(req.user.userId);
   }
 
   @Get('history/:partnerId')
   @ApiOperation({ summary: 'Get chat history between you and a specific user' })
+  @ApiResponse({
+    status: 200,
+    description: 'Chat history returned successfully',
+  })
   @ApiQuery({ name: 'cursor', required: false, type: Number })
-  async getHistory(@Req() req, @Param('partnerId') partnerId: string, @Query('cursor') cursor: string) {
-    return this.messageService.getChatHistory(req.user.userId, +partnerId, cursor ? +cursor : undefined);
+  async getHistory(
+    @Req() req,
+    @Param('partnerId') partnerId: string,
+    @Query('cursor') cursor: string,
+  ) {
+    return this.messageService.getChatHistory(
+      req.user.userId,
+      +partnerId,
+      cursor ? +cursor : undefined,
+    );
   }
 
   @Delete(':id/revoke')
   @ApiOperation({ summary: 'Revoke a message (Delete for everyone)' })
+  @ApiResponse({ status: 200, description: 'Message revoked successfully' })
   async revokeMessage(@Req() req, @Param('id') id: string) {
     return this.messageService.deleteForEveryone(+id, req.user.userId);
   }
 
   @Get('search')
   @ApiOperation({ summary: 'Search across all messages' })
-  async search(@Req() req, @Query('q') query: string, @Query('partnerId') partnerId?: string) {
+  @ApiResponse({
+    status: 200,
+    description: 'Search results returned successfully',
+  })
+  async search(
+    @Req() req,
+    @Query('q') query: string,
+    @Query('partnerId') partnerId?: string,
+  ) {
     if (!query) return [];
-    return this.messageService.searchMessages(req.user.userId, query, partnerId ? +partnerId : undefined);
+    return this.messageService.searchMessages(
+      req.user.userId,
+      query,
+      partnerId ? +partnerId : undefined,
+    );
   }
 
   @Patch(':id/edit')
   @ApiOperation({ summary: 'Edit a message content' })
-  async edit(@Req() req, @Param('id') id: string, @Body('content') content: string) {
+  @ApiResponse({ status: 200, description: 'Message edited successfully' })
+  async edit(
+    @Req() req,
+    @Param('id') id: string,
+    @Body('content') content: string,
+  ) {
     return this.messageService.editMessage(req.user.userId, +id, content);
   }
 
   @Post(':id/forward')
   @ApiOperation({ summary: 'Forward a message to another user' })
-  async forward(@Req() req, @Param('id') id: string, @Body('receiverId') receiverId: number) {
-    return this.messageService.forwardMessage(req.user.userId, +id, +receiverId);
+  @ApiResponse({ status: 200, description: 'Message forwarded successfully' })
+  async forward(
+    @Req() req,
+    @Param('id') id: string,
+    @Body('receiverId') receiverId: number,
+  ) {
+    return this.messageService.forwardMessage(
+      req.user.userId,
+      +id,
+      +receiverId,
+    );
   }
 
   @Post(':id/star')
   @ApiOperation({ summary: 'Star or unstar a message' })
+  @ApiResponse({
+    status: 200,
+    description: 'Message star toggled successfully',
+  })
   async star(@Req() req, @Param('id') id: string) {
     return this.messageService.toggleStar(req.user.userId, +id);
   }
 
   @Get('starred')
   @ApiOperation({ summary: 'View all your starred messages' })
+  @ApiResponse({
+    status: 200,
+    description: 'Starred messages returned successfully',
+  })
   async getStarred(@Req() req) {
     return this.messageService.getStarredMessages(req.user.userId);
   }
 
   @Patch(':id/pin')
   @ApiOperation({ summary: 'Pin or unpin a message' })
+  @ApiResponse({
+    status: 200,
+    description: 'Message pin state updated successfully',
+  })
   async pin(@Param('id') id: string, @Body('isPinned') isPinned: boolean) {
     return this.messageService.pinMessage(+id, isPinned);
   }

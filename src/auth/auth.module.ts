@@ -4,7 +4,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { EmailService } from './email.service';
-import {JwtStrategy} from './jwt.strategy'
+import {JwtStrategy} from './guards/jwt.strategy'
 @Module({
   imports: [
     JwtModule.register({
