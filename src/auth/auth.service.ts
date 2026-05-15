@@ -124,7 +124,7 @@ export class AuthService {
       // 5. Generate access and refresh tokens
       const accessToken = this.jwtService.sign(
         { sub: user.id, email: user.email, phone: user.phone },
-        { expiresIn: '15m' },
+        { expiresIn: '1h' },
       );
 
       const refreshToken = this.jwtService.sign(
