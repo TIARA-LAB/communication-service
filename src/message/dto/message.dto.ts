@@ -1,16 +1,24 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { IsNumber, IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class SendMessageDto {
   @ApiProperty({ example: 2, description: 'The ID of the user receiving the message' })
-
-  receiverId!: number; 
+  @Type(() => Number)
+  @IsNumber()
+  receiverId!: number;
 
   @ApiProperty({ example: 'Hello!', description: 'Message content' })
-  content!: string; 
+  @IsString()
+  @IsNotEmpty()
+  content!: string;
 
   @ApiProperty({ example: 'TEXT', enum: ['TEXT', 'IMAGE', 'VIDEO', 'FILE'] })
-  type!: string; 
+  @IsString()
+  @IsNotEmpty()
+  type!: string;
 
   @ApiPropertyOptional({ type: 'string', format: 'binary', description: 'Optional file upload' })
-  file?: any; 
+  @IsOptional()
+  file?: any;
 }

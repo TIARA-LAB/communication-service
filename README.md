@@ -23,7 +23,13 @@
 
 ## Description
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+Communication Service - A real-time messaging API built with NestJS, featuring email-based OTP authentication, JWT tokens, user profiles, group messaging, and WebSocket support.
+
+## Documentation
+
+- **[API Authentication Documentation](./AUTH_API_DOCS.md)** - Complete auth flow and endpoints
+- **[Testing Guide](./TESTING_GUIDE.md)** - How to test all endpoints with cURL, Postman, and Jest
+- **[Swagger API Docs](http://localhost:3000/api)** - Interactive API documentation (when running locally)
 
 ## Project setup
 
